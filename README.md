@@ -1,27 +1,44 @@
 # mruby-posixmq   [![Build Status](https://travis-ci.org/udzura/mruby-posixmq.svg?branch=master)](https://travis-ci.org/udzura/mruby-posixmq)
-PMQ class
+
+The POSIX message queue wrapper
+
+
 ## install by mrbgems
+
 - add conf.gem line to `build_config.rb`
 
 ```ruby
 MRuby::Build.new do |conf|
 
-    # ... (snip) ...
+  # ... (snip) ...
 
-    conf.gem :github => 'udzura/mruby-posixmq'
+  conf.gem :github => 'udzura/mruby-posixmq'
 end
 ```
+
 ## example
+
 ```ruby
-p PMQ.hi
-#=> "hi!!"
-t = PMQ.new "hello"
-p t.hello
-#=> "hello"
-p t.bye
-#=> "hello bye"
+## One process
+
+mq = PMQ.new('/sample1', PMQ::O_CREAT | PMQ::O_WRONLY)
+mq.send("The test message!!1")
+# => "The test message!!1"
+
+## Another process
+
+mq = PMQ.new('/tmp/sample1', PMQ::O_CREAT | PMQ::O_RDONLY)
+mq.receive
+# => "The test message!!1"
+# will block if no message
 ```
 
 ## License
+
 under the MIT License:
+
 - see LICENSE file
+
+## See also
+
+- [posix-mqueue MRI gem](https://github.com/Sirupsen/posix-mqueue)
