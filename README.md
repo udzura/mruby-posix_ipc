@@ -1,4 +1,4 @@
-# mruby-posixmq   [![Build Status](https://travis-ci.org/udzura/mruby-posixmq.svg?branch=master)](https://travis-ci.org/udzura/mruby-posixmq)
+# mruby-posix_ipc   [![Build Status](https://travis-ci.org/udzura/mruby-posix_ipc.svg?branch=master)](https://travis-ci.org/udzura/mruby-posix_ipc)
 
 The POSIX message queue wrapper
 
@@ -12,7 +12,7 @@ MRuby::Build.new do |conf|
 
   # ... (snip) ...
 
-  conf.gem :github => 'udzura/mruby-posixmq'
+  conf.gem :github => 'udzura/mruby-posix_ipc'
 end
 ```
 

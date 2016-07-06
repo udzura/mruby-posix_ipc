@@ -135,7 +135,7 @@ static mrb_value mrb_pmq_is_unlinked(mrb_state *mrb, mrb_value self)
   return mrb_bool_value(((mrb_pmq_data *) DATA_PTR(self))->unlinked);
 }
 
-void mrb_mruby_posixmq_gem_init(mrb_state *mrb)
+void mrb_mruby_posix_ipc_gem_init(mrb_state *mrb)
 {
   struct RClass *pmq;
   pmq = mrb_define_class(mrb, "PMQ", mrb->object_class);
@@ -156,6 +156,6 @@ void mrb_mruby_posixmq_gem_init(mrb_state *mrb)
   DONE;
 }
 
-void mrb_mruby_posixmq_gem_final(mrb_state *mrb)
+void mrb_mruby_posix_ipc_gem_final(mrb_state *mrb)
 {
 }

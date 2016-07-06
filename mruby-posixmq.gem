@@ -1,6 +1,0 @@
-name: mruby-posixmq
-description: PMQ class
-author: Uchio Kondo
-website: https://github.com/udzura/mruby-posixmq
-protocol: git
-repository: https://github.com/udzura/mruby-posixmq.git
