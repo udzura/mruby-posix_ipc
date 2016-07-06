@@ -16,22 +16,42 @@ MRuby::Build.new do |conf|
 end
 ```
 
-## example
+## examples
+
+### POSIX MQ
 
 ```ruby
 ## One process
 
-mq = PMQ.new('/sample1', PMQ::O_CREAT | PMQ::O_WRONLY)
+mq = PMQ.create('/sample1', mode: "w")
 mq.send("The test message!!1")
 # => "The test message!!1"
 
 ## Another process
 
-mq = PMQ.new('/tmp/sample1', PMQ::O_CREAT | PMQ::O_RDONLY)
+mq = PMQ.create('/tmp/sample1', mode: "r")
 mq.receive
 # => "The test message!!1"
 # will block if no message
+
+## Use channel
+
+r, w = PMQ.channel2 "/hello_2"
+Process.fork do
+  sleep 0.5
+  w.send "foobar"
+end
+
+res = r.receive
+#=> "foobar"
 ```
+
+#### options for `.create` and `.channel`
+
+* `:mode` specify MQ descriptor read/write mode by letters
+* `:queue_size` specify MQ's max size
+* `:message_size` specify MQ's max message size, default to `/proc/sys/fs/mqueue/msgsize_max`
+* NOTE: `.new` is a raw and low-level API.
 
 ## License
 
