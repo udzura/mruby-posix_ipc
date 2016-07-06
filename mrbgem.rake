@@ -2,7 +2,7 @@ MRuby::Gem::Specification.new('mruby-posix_ipc') do |spec|
   spec.license = 'MIT'
   spec.authors = 'Uchio Kondo'
 
-  spec.cc.flags << '-pthread'
+  spec.linker.flags << '-pthread'
   spec.linker.libraries << 'rt'
 
   spec.add_test_dependency 'mruby-print', core: 'mruby-print'
