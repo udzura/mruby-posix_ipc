@@ -10,13 +10,14 @@ end
 
 assert("PMQ send and receive") do
   r, w = PMQ.channel2 "/hello_2"
-  Process.fork do
+  p = Process.fork do
     sleep 0.5
     w.send "foobar"
   end
 
   res = r.receive
+  Process.waitpid p
   assert_equal res, "foobar"
 
-  pmq.unlink rescue nil
+  r.unlink rescue nil
 end
