@@ -53,6 +53,37 @@ res = r.receive
 * `:message_size` specify MQ's max message size, default to `/proc/sys/fs/mqueue/msgsize_max`
 * NOTE: `.new` is a raw and low-level API.
 
+### POSIX Semaphore
+
+```ruby
+## Processes
+
+sem = PSem.open('/sample3')
+
+Process.fork do
+  # Doing critical job 001
+  sleep 5
+  sem.post
+end
+
+sem.wait
+# Blocking and will be released after 5 sec
+# Continue critical job 002
+# ...
+
+
+## trywait
+
+sem = PSem.open "/sample4, value: 1
+sem.trywait #=> 0
+sem.trywait #=> nonblock, but -1
+
+sem.post
+sem.trywait #=> 0
+```
+
+* Please examine the `test` directory for example.
+
 ## License
 
 under the MIT License:

@@ -1,7 +1,3 @@
-##
-## PMQ Test
-##
-
 assert("PMQ.new") do
   pmq = PMQ.create "/hello"
   assert_true pmq.is_a?(PMQ)
