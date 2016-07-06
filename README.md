@@ -56,20 +56,67 @@ res = r.receive
 ### POSIX Semaphore
 
 ```ruby
-## Processes
+## Running jobs by 3
 
-sem = PSem.open('/sample3')
-
-Process.fork do
-  # Doing critical job 001
-  sleep 5
-  sem.post
+begin
+  sem = PSem.open('/job_by_3', value: 3)
+ 
+  pids = (0..10).map do |i|
+    Process.fork do
+      puts "Waiting job: #{i}"
+      sem.wait
+      puts "Enter job: #{i}"
+      sleep rand(10)
+      puts "(Now sem.value = #{sem.value})"
+      sem.post
+    end
+  end
+ 
+  pids.each do |pid|
+    Process.waitpid pid
+  end
+ 
+  puts "Exit all"
+ensure
+  sem.unlink
 end
 
-sem.wait
-# Blocking and will be released after 5 sec
-# Continue critical job 002
-# ...
+# log:
+
+    Waiting job: 4
+    Waiting job: 0
+    Enter job: 0
+    Waiting job: 10
+    Enter job: 4
+    Waiting job: 2
+    Waiting job: 3
+    Enter job: 3
+    Waiting job: 5
+    Waiting job: 7
+    Waiting job: 9
+    Waiting job: 1
+    Waiting job: 6
+    Waiting job: 8
+    (Now sem.value = 0)
+    Enter job: 10
+    (Now sem.value = 0)
+    Enter job: 5
+    (Now sem.value = 0)
+    Enter job: 7
+    (Now sem.value = 0)
+    (Now sem.value = 1)
+    (Now sem.value = 2)
+    Enter job: 1
+    Enter job: 2
+    Enter job: 6
+    (Now sem.value = 0)
+    (Now sem.value = 1)
+    (Now sem.value = 2)
+    Enter job: 9
+    Enter job: 8
+    (Now sem.value = 1)
+    (Now sem.value = 2)
+    Exit all
 
 
 ## trywait
