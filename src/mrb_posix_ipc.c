@@ -15,7 +15,7 @@
 #include "mruby/data.h"
 #include "mruby/error.h"
 #include "mruby/string.h"
-#include "mrb_pmq.h"
+#include "mrb_posix_ipc.h"
 
 #define DONE mrb_gc_arena_restore(mrb, 0);
 
