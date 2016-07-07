@@ -5,6 +5,13 @@ assert("PSem.new") do
   psem.unlink  rescue nil
 end
 
+assert("PSem.new") do
+  psem = PSem.new_without_name(value: 3)
+  assert_true psem.is_a?(PSem)
+  assert_equal psem.name,  nil
+  assert_equal psem.value, 3
+end
+
 assert("PSem.new default value") do
   psem = PSem.open "/hello_1", value: 3
   assert_equal psem.value, 3
