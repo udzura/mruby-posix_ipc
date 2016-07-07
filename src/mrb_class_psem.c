@@ -27,7 +27,11 @@ typedef struct {
 static void mrb_psem_free(mrb_state *mrb, void *p)
 {
   mrb_psem_data *d = (mrb_psem_data *)p;
-  sem_close(d->sem);
+  if(d->name == NULL) {
+    sem_destroy(d->sem);
+  } else {
+    sem_close(d->sem);
+  }
   mrb_free(mrb, d);
 }
 
@@ -48,11 +52,25 @@ static int psem_initialize_with_name(mrb_psem_data *psem, const char* name, int 
   return 0;
 }
 
+static int psem_initialize_without_name(mrb_psem_data *psem, int flag, int initvalue)
+{
+  sem_t *sem = malloc(sizeof(sem));
+
+  if(sem_init(sem, flag, initvalue)) {
+    return -1;
+  }
+  psem->sem = sem;
+  psem->name = NULL;
+  psem->unlinked = false;
+  return 0;
+}
+
 static mrb_value mrb_psem_init(mrb_state *mrb, mrb_value self)
 {
   mrb_psem_data *psem;
   char *name;
   mrb_int flag, initvalue = 0;
+  int ret;
 
   psem = (mrb_psem_data *)DATA_PTR(self);
   if (psem) {
@@ -61,9 +79,15 @@ static mrb_value mrb_psem_init(mrb_state *mrb, mrb_value self)
   DATA_TYPE(self) = &mrb_psem_data_type;
   DATA_PTR(self) = NULL;
 
-  mrb_get_args(mrb, "zi|i", &name, &flag, &initvalue);
+  mrb_get_args(mrb, "z?i|i", &name, &flag, &initvalue);
   psem = (mrb_psem_data *)mrb_malloc(mrb, sizeof(mrb_psem_data));
-  if(psem_initialize_with_name(psem, name, flag, initvalue) < 0) {
+
+  if(name == NULL){
+    ret = psem_initialize_without_name(psem, flag, initvalue);
+  } else {
+    ret = psem_initialize_with_name(psem, name, flag, initvalue);
+  }
+  if(ret < 0) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Failed to create PSem data.");
   }
   DATA_PTR(self) = psem;
@@ -109,13 +133,21 @@ static mrb_value mrb_psem_close(mrb_state *mrb, mrb_value self)
 {
   mrb_psem_data *psem = (mrb_psem_data *)DATA_PTR(self);
 
-  return mrb_fixnum_value(sem_close(psem->sem));
+  if(psem->name == NULL) {
+    return mrb_fixnum_value(sem_destroy(psem->sem));
+  } else {
+    return mrb_fixnum_value(sem_close(psem->sem));
+  }
 }
 
 static mrb_value mrb_psem_unlink(mrb_state *mrb, mrb_value self)
 {
   mrb_psem_data *psem = (mrb_psem_data *)DATA_PTR(self);
   int ret;
+
+  if(psem->name == NULL) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "semaphore has no name");
+  }
 
   ret = sem_unlink(psem->name);
   if(ret < 0) {
@@ -127,7 +159,11 @@ static mrb_value mrb_psem_unlink(mrb_state *mrb, mrb_value self)
 
 static mrb_value mrb_psem_name(mrb_state *mrb, mrb_value self)
 {
-  return mrb_str_new_cstr(mrb, ((mrb_psem_data *) DATA_PTR(self))->name);
+  mrb_psem_data *psem = (mrb_psem_data *)DATA_PTR(self);
+  if(psem->name == NULL) {
+    return mrb_nil_value();
+  }
+  return mrb_str_new_cstr(mrb, psem->name);
 }
 
 static mrb_value mrb_psem_value(mrb_state *mrb, mrb_value self)
