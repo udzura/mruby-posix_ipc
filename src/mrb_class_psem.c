@@ -79,7 +79,7 @@ static mrb_value mrb_psem_init(mrb_state *mrb, mrb_value self)
   DATA_TYPE(self) = &mrb_psem_data_type;
   DATA_PTR(self) = NULL;
 
-  mrb_get_args(mrb, "z?i|i", &name, &flag, &initvalue);
+  mrb_get_args(mrb, "z!i|i", &name, &flag, &initvalue);
   psem = (mrb_psem_data *)mrb_malloc(mrb, sizeof(mrb_psem_data));
 
   if(name == NULL){
