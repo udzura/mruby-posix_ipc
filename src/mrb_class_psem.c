@@ -20,7 +20,7 @@
 
 typedef struct {
   sem_t *sem;
-  char *name;
+  const char *name;
   bool unlinked;
 } mrb_psem_data;
 
@@ -35,12 +35,24 @@ static const struct mrb_data_type mrb_psem_data_type = {
   "mrb_psem_data", mrb_psem_free,
 };
 
+static int psem_initialize_with_name(mrb_psem_data *psem, const char* name, int flag, int initvalue)
+{
+  sem_t *sem;
+  sem = sem_open(name, flag, 0644, initvalue);
+  if(sem == SEM_FAILED) {
+    return -1;
+  }
+  psem->sem = sem;
+  psem->name = name;
+  psem->unlinked = false;
+  return 0;
+}
+
 static mrb_value mrb_psem_init(mrb_state *mrb, mrb_value self)
 {
   mrb_psem_data *psem;
   char *name;
   mrb_int flag, initvalue = 0;
-  sem_t *sem;
 
   psem = (mrb_psem_data *)DATA_PTR(self);
   if (psem) {
@@ -51,13 +63,9 @@ static mrb_value mrb_psem_init(mrb_state *mrb, mrb_value self)
 
   mrb_get_args(mrb, "zi|i", &name, &flag, &initvalue);
   psem = (mrb_psem_data *)mrb_malloc(mrb, sizeof(mrb_psem_data));
-  sem = sem_open(name, flag, 0644, initvalue);
-  if(sem == SEM_FAILED) {
-    mrb_sys_fail(mrb, "sem_open failed.");
+  if(psem_initialize_with_name(psem, name, flag, initvalue) < 0) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Failed to create PSem data.");
   }
-  psem->sem = sem;
-  psem->name = name;
-  psem->unlinked = false;
   DATA_PTR(self) = psem;
 
   return self;
