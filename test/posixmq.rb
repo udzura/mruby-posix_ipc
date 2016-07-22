@@ -1,6 +1,7 @@
 assert("PMQ.new") do
   pmq = PMQ.create "/hello"
   assert_true pmq.is_a?(PMQ)
+  assert_equal "/hello", pmq.name
   pmq.unlink rescue nil
 end
 
