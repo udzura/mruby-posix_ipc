@@ -29,6 +29,7 @@ static void mrb_pmq_free(mrb_state *mrb, void *p)
 {
   mrb_pmq_data *d = (mrb_pmq_data *)p;
   mq_close(d->mqd);
+  free(d->name);
   free(d->attr);
   mrb_free(mrb, d);
 }

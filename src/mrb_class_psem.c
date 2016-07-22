@@ -20,7 +20,7 @@
 
 typedef struct {
   sem_t *sem;
-  const char *name;
+  char *name;
   bool unlinked;
 } mrb_psem_data;
 
@@ -32,6 +32,7 @@ static void mrb_psem_free(mrb_state *mrb, void *p)
   } else {
     sem_close(d->sem);
   }
+  free(d->name);
   free(d->sem);
   mrb_free(mrb, d);
 }
@@ -40,7 +41,7 @@ static const struct mrb_data_type mrb_psem_data_type = {
   "mrb_psem_data", mrb_psem_free,
 };
 
-static int psem_initialize_with_name(mrb_psem_data *psem, const char* name, int flag, int initvalue)
+static int psem_initialize_with_name(mrb_psem_data *psem, char* name, int flag, int initvalue)
 {
   sem_t *sem;
   sem = sem_open(name, flag, 0644, initvalue);
