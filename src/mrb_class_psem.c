@@ -1,6 +1,4 @@
 /*
-** mrb_pmq.c - PMQ class
-**
 ** Copyright (c) Uchio Kondo 2016
 **
 ** See Copyright Notice in LICENSE
@@ -16,22 +14,23 @@
 #include "mruby/data.h"
 #include "mruby/error.h"
 #include "mruby/string.h"
+#include "mruby/variable.h"
 #include "mrb_posix_ipc.h"
 
 typedef struct {
   sem_t *sem;
-  const char *name;
-  bool unlinked;
+  bool named, unlinked;
 } mrb_psem_data;
 
 static void mrb_psem_free(mrb_state *mrb, void *p)
 {
   mrb_psem_data *d = (mrb_psem_data *)p;
-  if(d->name == NULL) {
+  if(d->named) {
     sem_destroy(d->sem);
   } else {
     sem_close(d->sem);
   }
+  free(d->sem);
   mrb_free(mrb, d);
 }
 
@@ -47,7 +46,7 @@ static int psem_initialize_with_name(mrb_psem_data *psem, const char* name, int 
     return -1;
   }
   psem->sem = sem;
-  psem->name = name;
+  psem->named = true;
   psem->unlinked = false;
   return 0;
 }
@@ -60,7 +59,7 @@ static int psem_initialize_without_name(mrb_psem_data *psem, int flag, int initv
     return -1;
   }
   psem->sem = sem;
-  psem->name = NULL;
+  psem->named = false;
   psem->unlinked = false;
   return 0;
 }
@@ -68,7 +67,7 @@ static int psem_initialize_without_name(mrb_psem_data *psem, int flag, int initv
 static mrb_value mrb_psem_init(mrb_state *mrb, mrb_value self)
 {
   mrb_psem_data *psem;
-  char *name;
+  mrb_value name;
   mrb_int flag, initvalue = 0;
   int ret;
 
@@ -79,18 +78,19 @@ static mrb_value mrb_psem_init(mrb_state *mrb, mrb_value self)
   DATA_TYPE(self) = &mrb_psem_data_type;
   DATA_PTR(self) = NULL;
 
-  mrb_get_args(mrb, "z!i|i", &name, &flag, &initvalue);
+  mrb_get_args(mrb, "S!i|i", &name, &flag, &initvalue);
   psem = (mrb_psem_data *)mrb_malloc(mrb, sizeof(mrb_psem_data));
 
-  if(name == NULL){
+  if(mrb_nil_p(name)){
     ret = psem_initialize_without_name(psem, flag, initvalue);
   } else {
-    ret = psem_initialize_with_name(psem, name, flag, initvalue);
+    ret = psem_initialize_with_name(psem, mrb_str_to_cstr(mrb, name), flag, initvalue);
   }
   if(ret < 0) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Failed to create PSem data.");
   }
   DATA_PTR(self) = psem;
+  mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@name"), name);
 
   return self;
 }
@@ -133,11 +133,21 @@ static mrb_value mrb_psem_close(mrb_state *mrb, mrb_value self)
 {
   mrb_psem_data *psem = (mrb_psem_data *)DATA_PTR(self);
 
-  if(psem->name == NULL) {
+  if(!psem->named) {
     return mrb_fixnum_value(sem_destroy(psem->sem));
   } else {
     return mrb_fixnum_value(sem_close(psem->sem));
   }
+}
+
+static mrb_value mrb_psem_name(mrb_state *mrb, mrb_value self)
+{
+  return mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@name"));
+}
+
+static char *mrb_psem_name_cstr(mrb_state *mrb, mrb_value self)
+{
+  return mrb_str_to_cstr(mrb, mrb_psem_name(mrb, self));
 }
 
 static mrb_value mrb_psem_unlink(mrb_state *mrb, mrb_value self)
@@ -145,11 +155,11 @@ static mrb_value mrb_psem_unlink(mrb_state *mrb, mrb_value self)
   mrb_psem_data *psem = (mrb_psem_data *)DATA_PTR(self);
   int ret;
 
-  if(psem->name == NULL) {
+  if(!psem->named) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "semaphore has no name");
   }
 
-  ret = sem_unlink(psem->name);
+  ret = sem_unlink(mrb_psem_name_cstr(mrb, self));
   if(ret < 0) {
     mrb_sys_fail(mrb, "sem_unlink failed.");
   }
@@ -157,13 +167,10 @@ static mrb_value mrb_psem_unlink(mrb_state *mrb, mrb_value self)
   return mrb_fixnum_value(ret);
 }
 
-static mrb_value mrb_psem_name(mrb_state *mrb, mrb_value self)
+static mrb_value mrb_psem_is_named(mrb_state *mrb, mrb_value self)
 {
   mrb_psem_data *psem = (mrb_psem_data *)DATA_PTR(self);
-  if(psem->name == NULL) {
-    return mrb_nil_value();
-  }
-  return mrb_str_new_cstr(mrb, psem->name);
+  return mrb_bool_value(psem->named);
 }
 
 static mrb_value mrb_psem_value(mrb_state *mrb, mrb_value self)
@@ -192,6 +199,7 @@ void mrb_psem_class_init(mrb_state *mrb)
   mrb_define_method(mrb, psem, "close",      mrb_psem_close,       MRB_ARGS_NONE());
   mrb_define_method(mrb, psem, "unlink",     mrb_psem_unlink,      MRB_ARGS_NONE());
   mrb_define_method(mrb, psem, "name",       mrb_psem_name,        MRB_ARGS_NONE());
+  mrb_define_method(mrb, psem, "named?",     mrb_psem_is_named,    MRB_ARGS_NONE());
   mrb_define_method(mrb, psem, "value",      mrb_psem_value,       MRB_ARGS_NONE());
   mrb_define_method(mrb, psem, "unlinked?",  mrb_psem_is_unlinked, MRB_ARGS_NONE());
 }

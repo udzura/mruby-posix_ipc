@@ -1,15 +1,18 @@
 assert("PSem.new") do
   psem = PSem.open "/hello"
-  assert_true psem.is_a?(PSem)
+  assert_true  psem.is_a?(PSem)
+  assert_equal "/hello", psem.name
+  assert_true  psem.named?
 
   psem.unlink  rescue nil
 end
 
-assert("PSem.new") do
+assert("PSem.new w/o name") do
   psem = PSem.new_without_name(value: 3)
-  assert_true psem.is_a?(PSem)
+  assert_true  psem.is_a?(PSem)
   assert_equal psem.name,  nil
   assert_equal psem.value, 3
+  assert_false psem.named?
 end
 
 assert("PSem.new default value") do
