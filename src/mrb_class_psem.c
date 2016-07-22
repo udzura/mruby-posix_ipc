@@ -32,6 +32,7 @@ static void mrb_psem_free(mrb_state *mrb, void *p)
   } else {
     sem_close(d->sem);
   }
+  free(d->sem);
   mrb_free(mrb, d);
 }
 
