@@ -47,9 +47,10 @@ static int get_system_msgsize_max(mrb_state *mrb)
     return -1;
 
   size_t len = fread(buf, maxlen, 1, f);
+  fclose(f);
+
   if(len < 0)
     return -1;
-  fclose(f);
 
   mrb_value str = mrb_str_new_cstr(mrb, buf);
   str = mrb_funcall(mrb, str, "chomp", 0);
