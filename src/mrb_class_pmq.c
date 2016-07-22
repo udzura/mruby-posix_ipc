@@ -49,6 +49,7 @@ static int get_system_msgsize_max(mrb_state *mrb)
   size_t len = fread(buf, maxlen, 1, f);
   if(len < 0)
     return -1;
+  fclose(f);
 
   mrb_value str = mrb_str_new_cstr(mrb, buf);
   str = mrb_funcall(mrb, str, "chomp", 0);
@@ -121,6 +122,7 @@ static mrb_value mrb_pmq_receive(mrb_state *mrb, mrb_value self)
   mrb_pmq_data *data = (mrb_pmq_data *)DATA_PTR(self);
   char *buf;
   ssize_t read_buf;
+  mrb_value str;
   buf = (char *)malloc(data->attr->mq_msgsize * sizeof(char));
 
   read_buf = mq_receive(data->mqd, buf, data->attr->mq_msgsize, NULL);
@@ -128,7 +130,9 @@ static mrb_value mrb_pmq_receive(mrb_state *mrb, mrb_value self)
     mrb_sys_fail(mrb, "mq_receive failed.");
   }
 
-  return mrb_str_new(mrb, buf, read_buf);
+  str = mrb_str_new(mrb, buf, read_buf);
+  free(buf);
+  return str;
 }
 
 static mrb_value mrb_pmq_close(mrb_state *mrb, mrb_value self)
