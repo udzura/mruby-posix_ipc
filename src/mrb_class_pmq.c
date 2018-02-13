@@ -13,6 +13,7 @@
 #include <mqueue.h>
 
 #include "mruby.h"
+#include "mruby/class.h"
 #include "mruby/data.h"
 #include "mruby/error.h"
 #include "mruby/string.h"
@@ -183,6 +184,7 @@ void mrb_pmq_class_init(mrb_state *mrb)
 {
   struct RClass *pmq;
   pmq = mrb_define_class(mrb, "PMQ", mrb->object_class);
+  MRB_SET_INSTANCE_TT(pmq, MRB_TT_DATA);
   mrb_define_method(mrb, pmq, "initialize", mrb_pmq_init,        MRB_ARGS_REQ(4));
   mrb_define_method(mrb, pmq, "send",       mrb_pmq_send,        MRB_ARGS_ARG(1,1));
   mrb_define_method(mrb, pmq, "receive",    mrb_pmq_receive,     MRB_ARGS_NONE());
