@@ -11,6 +11,7 @@
 #include <semaphore.h>
 
 #include "mruby.h"
+#include "mruby/class.h"
 #include "mruby/data.h"
 #include "mruby/error.h"
 #include "mruby/string.h"
@@ -29,8 +30,8 @@ static void mrb_psem_free(mrb_state *mrb, void *p)
     sem_destroy(d->sem);
   } else {
     sem_close(d->sem);
+    free(d->sem);
   }
-  free(d->sem);
   mrb_free(mrb, d);
 }
 
@@ -80,6 +81,7 @@ static mrb_value mrb_psem_init(mrb_state *mrb, mrb_value self)
 
   mrb_get_args(mrb, "S!i|i", &name, &flag, &initvalue);
   psem = (mrb_psem_data *)mrb_malloc(mrb, sizeof(mrb_psem_data));
+  psem->sem = NULL;
 
   if(mrb_nil_p(name)){
     ret = psem_initialize_without_name(psem, flag, initvalue);
@@ -192,6 +194,7 @@ void mrb_psem_class_init(mrb_state *mrb)
 {
   struct RClass *psem;
   psem = mrb_define_class(mrb, "PSem", mrb->object_class);
+  MRB_SET_INSTANCE_TT(psem, MRB_TT_DATA);
   mrb_define_method(mrb, psem, "initialize", mrb_psem_init,        MRB_ARGS_ARG(2,1));
   mrb_define_method(mrb, psem, "wait",       mrb_psem_wait,        MRB_ARGS_NONE());
   mrb_define_method(mrb, psem, "trywait",    mrb_psem_trywait,     MRB_ARGS_NONE());
