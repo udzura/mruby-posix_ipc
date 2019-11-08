@@ -7,7 +7,8 @@ pids = (0..10).map do |i|
     puts "Waiting job: #{i}"
     sem.wait
     puts "Enter job: #{i}"
-    sleep rand(10)
+    sleep rand(3)
+    puts "Done: #{i}"
     puts "(Now sem.value = #{sem.value})"
     sem.post
   end
